@@ -1,0 +1,73 @@
+version: '3.8'
+services:
+  auth_service:
+    build: ./auth_service
+    ports:
+      - "3001:3000"
+    environment:
+      - DATABASE_URL=postgres://user:password@auth_db:5432/auth_db
+    depends_on:
+      - auth_db
+
+  auth_db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: auth_db
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+
+  notification_service:
+    build: ./notification_service
+    ports:
+      - "3002:3000"
+    environment:
+      - DATABASE_URL=postgres://user:password@notification_db:5432/notification_db
+    depends_on:
+      - notification_db
+
+  notification_db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: notification_db
+    volumes:
+      - notification_db_data:/var/lib/postgresql/data
+
+  scraping_service:
+    build: ./scraping_service
+    ports:
+      - "3003:3000"
+    environment:
+      - DATABASE_URL=postgres://user:password@scraping_db:5432/scraping_db
+    depends_on:
+      - scraping_db
+
+  scraping_db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: scraping_db
+    volumes:
+      - scraping_db_data:/var/lib/postgresql/data
+
+  task_manager:
+    build: ./task_manager
+    ports:
+      - "3000:3000"
+    environment:
+      - AUTH_SERVICE_URL=http://auth_service:3001
+      - NOTIFICATION_SERVICE_URL=http://notification_service:3002
+      - WEBSCRAPING_SERVICE_URL=http://scraping_service:3003
+    depends_on:
+      - auth_service
+      - notification_service
+      - scraping_service
+
+volumes:
+  auth_db_data:
+  notification_db_data:
+  scraping_db_data:
